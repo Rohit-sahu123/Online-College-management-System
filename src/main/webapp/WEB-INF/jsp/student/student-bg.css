@@ -1,0 +1,29 @@
+/* Animated Gradient Background */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(270deg, #6dd5fa, #2980b9, #8e44ad, #e056fd);
+    background-size: 800% 800%;
+    animation: gradientAnimation 15s ease infinite;
+    min-height: 100vh;
+}
+
+/* Smooth Animation */
+@keyframes gradientAnimation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Card Shadow (Better for all pages) */
+.card {
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+/* Heading */
+h2, h3 {
+    color: white;
+    text-shadow: 1px 1px 3px black;
+}
