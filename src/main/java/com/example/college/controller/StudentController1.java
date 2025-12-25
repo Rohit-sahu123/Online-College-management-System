@@ -562,6 +562,16 @@
 
 package com.example.college.controller;
 
+import com.example.college.repository.AttendanceRepository;
+import com.example.college.repository.StudentRepository;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.ui.Model;
+import jakarta.servlet.http.HttpSession;
+
+import java.time.LocalDate;
+
+import com.example.college.model.Attendance;
+import com.example.college.model.Student;
 import com.example.college.model.Student1;
 import com.example.college.service.ResultService;
 import com.example.college.service.StudentService1;
@@ -571,12 +581,24 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.MultiFormatWriter;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.MultiFormatWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/student1")
@@ -615,50 +637,90 @@ public class StudentController1 {
     }
 
 
-
-
-
     /* -------------------- LOGIN PAGE -------------------- */
+    @Autowired
+    private StudentService1 studentService;
 
+//    @GetMapping("/login")
+//    public String loginForm() {
+//        return "student/student1-login";
+//    }
+
+    // 🔹 LOGIN PAGE (GET)
     @GetMapping("/login")
-    public String loginForm() {
+    public String loginPage() {
         return "student/student1-login";
     }
 
+    // 🔹 LOGIN SUBMIT (POST)  ✅ VERY IMPORTANT
+//    @PostMapping("/login")
+//    public String loginSubmit(
+//            @RequestParam String email,
+//            @RequestParam String password,
+//            HttpSession session,
+//            Model model) {
+//
+//        Student1 st = service.login(email, password);
+//
+//        if (st == null) {
+//            model.addAttribute("error", "Invalid Email or Password");
+//            return "student/student1-login";
+//        }
+//
+//        session.setAttribute("student1", st);
+//        return "redirect:/student1/dashboard";
+//    }
+
     @PostMapping("/login")
-    public String login(
+    public String studentLogin(
             @RequestParam String email,
             @RequestParam String password,
             HttpSession session,
-            Model model) {
+            HttpServletRequest request) {
 
-        Student1 st = service.login(email, password);
+        Student1 student = studentService.findByEmail(email);
 
-        if (st == null) {
-            model.addAttribute("error", "Invalid Email or Password!");
-            return "student/student1-login";
+        if (student != null && password.equals(student.getPassword())) {
+
+            // 🔥 old session clear
+            session.invalidate();
+
+            // 🔥 create NEW session
+            HttpSession newSession = request.getSession(true);
+
+            newSession.setAttribute("student1", student);
+
+            System.out.println("LOGIN SUCCESS, STUDENT ID = " + student.getId());
+
+            return "redirect:/student1/dashboard";
         }
 
-        session.setAttribute("studentEmail", st.getEmail());
-
-        return "redirect:/student1/dashboard";
+        System.out.println("LOGIN FAILED");
+        return "redirect:/student1/login?error";
     }
+
+
+
+
+
 
 
 
     /* -------------------- DASHBOARD -------------------- */
 
+    // 🔹 DASHBOARD
     @GetMapping("/dashboard")
-    public String dashboard(Model model, HttpSession session) {
+    public String dashboard(HttpSession session, Model model) {
 
-        String email = (String) session.getAttribute("studentEmail");
-        if (email == null) return "redirect:/student1/login";
+        Student1 st = (Student1) session.getAttribute("student1");
+        if (st == null) {
+            return "redirect:/student1/login";
+        }
 
-        Student1 st = service.findByEmail(email);
         model.addAttribute("student", st);
-
         return "student/student1-dashboard";
     }
+
 
 
 
@@ -669,10 +731,10 @@ public class StudentController1 {
     @GetMapping("/results")
     public String viewResults(Model model, HttpSession session) {
 
-        String email = (String) session.getAttribute("studentEmail");
+        Student1 email = (Student1) session.getAttribute("student1");
         if (email == null) return "redirect:/student1/login";
 
-        model.addAttribute("results", resultService.getByEmail(email));
+        model.addAttribute("results", resultService.getByEmail("student1"));
         return "student/student1-results";
     }
 
@@ -685,10 +747,10 @@ public class StudentController1 {
     @GetMapping("/idcard")
     public String idcard(Model model, HttpSession session) {
 
-        String email = (String) session.getAttribute("studentEmail");
+        Student1 email = (Student1) session.getAttribute("student1");
         if (email == null) return "redirect:/student1/login";
 
-        Student1 st = service.findByEmail(email);
+        Student1 st = service.findByEmail("student1");
         model.addAttribute("student", st);
 
         return "student/student1-idcard";
@@ -704,10 +766,10 @@ public class StudentController1 {
     public String uploadIdCardPhoto(@RequestParam("photo") MultipartFile file,
                                     HttpSession session) {
 
-        String email = (String) session.getAttribute("studentEmail");
+        Student1 email = (Student1) session.getAttribute("student1");
         if (email == null) return "redirect:/student1/login";
 
-        Student1 st = service.findByEmail(email);
+        Student1 st = service.findByEmail("student1");
         if (st == null) return "redirect:/student1/idcard";
 
         try {
@@ -759,10 +821,10 @@ public class StudentController1 {
         return "student/student1-timetable";
     }
 
-    @GetMapping("/attendance")
-    public String attendance() {
-        return "student/student1-attendance";
-    }
+//    @GetMapping("/attendance")
+//    public String attendance() {
+//        return "student/student1-attendance";
+//    }
 
     @GetMapping("/assignments")
     public String assignments() {
@@ -821,6 +883,117 @@ public class StudentController1 {
 
         return "student/student1-profile";  // Profile page refresh
     }
+
+    @GetMapping(value = "/qr", produces = "image/png")
+    @ResponseBody
+    public byte[] studentQr(HttpSession session) throws Exception {
+
+        String email = (String) session.getAttribute("studentEmail");
+        if (email == null) return null;
+
+        Student1 st1 = service.findByEmail(email);
+        Long studentId = st1.getId();
+
+        String data = studentId + "|" + LocalDate.now();
+
+        BitMatrix matrix = new MultiFormatWriter()
+                .encode(data, BarcodeFormat.QR_CODE, 250, 250);
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        MatrixToImageWriter.writeToStream(matrix, "PNG", out);
+
+        return out.toByteArray();
+    }
+
+
+    @Autowired
+    private StudentRepository studentRepository;
+
+    @Autowired
+    private AttendanceRepository attendanceRepository;
+
+
+    //----------------------------Attendence----------------------------------
+
+    @GetMapping("/attendance")
+    public String studentAttendancePage(Model model, HttpSession session) {
+
+        // ✅ Logged student from session
+        Student1 st1 = (Student1) session.getAttribute("student1");
+        if (st1 == null) {
+            return "redirect:/student1/login";
+        }
+
+        long studentId = st1.getId();
+
+        // 🔹 TODAY attendance
+        Attendance todayAttendance =
+                attendanceRepository
+                        .findByStudentIdAndDate(studentId, LocalDate.now())
+                        .orElse(null);
+
+        // 🔹 ALL attendance
+        List<Attendance> attendanceList =
+                attendanceRepository.findByStudentId(studentId);
+
+        // 🔹 🔥 QR CODE DATA (student specific)
+        String qrData = "STUDENT_ID=" + studentId;
+
+//        String qrUrl =
+//                "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=STUDENT_ID=" + studentId;
+//        String qrUrl =
+//                "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=STUDENT_ID="
+//                        + studentId;
+        String qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=STUDENT_ID="
+                + studentId
+                + "&t=" + System.currentTimeMillis(); // 🔥 cache breaker
+
+        model.addAttribute("qrUrl", qrUrl);
+        // 🔹 send to JSP
+        model.addAttribute("student", st1);
+        model.addAttribute("todayAttendance", todayAttendance);
+        model.addAttribute("attendanceList", attendanceList);
+        // model.addAttribute("qrUrl", qrUrl);   // 🔥 IMPORTANT
+        System.out.println("LOGGED STUDENT ID = " + st1.getId());
+
+        return "student/student1-attendance";
+    }
+
+
+    //    @GetMapping("/dashboard")
+//    public String studentDashboard(HttpSession session) {
+//
+//        // 🔒 session check (optional but good)
+//        if (session.getAttribute("loggedStudent") == null) {
+//            return "redirect:/student/login";
+//        }
+//
+//        return "student/dashboard";
+//    }
+    @PostMapping("/scan-attendance")
+    @ResponseBody
+    public String scanAttendance(@RequestParam("data") Long studentId) {
+
+        LocalDate today = LocalDate.now();
+
+        Optional<Attendance> existing =
+                attendanceRepository.findByStudentIdAndDate(studentId, today);
+
+        if (existing.isPresent()) {
+            return "Attendance already marked";
+        }
+
+        Attendance att = new Attendance();
+        att.setStudentId(studentId);
+        att.setDate(today);
+        att.setPresent(true);
+        att.setScanTime(LocalDateTime.now());
+
+        attendanceRepository.save(att);
+
+        return "Attendance marked successfully";
+    }
+
 
 }
 

@@ -2,6 +2,7 @@ package com.example.college.controller;
 
 import com.example.college.model.Fees;
 import com.example.college.model.Student;
+import com.example.college.model.Student1;
 import com.example.college.repository.FeesRepository;
 import com.example.college.repository.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +27,7 @@ public class FeesController {
     @GetMapping("/admin/fees")
     public String listFees(Model model) {
         List<Fees> feesList = feesRepository.findAll();
-        List<Student> students = studentRepository.findAll();  // 👈 dropdown ke liye student list
+        List<Student1> students = studentRepository.findAll();  // 👈 dropdown ke liye student list
         model.addAttribute("feesList", feesList);
         model.addAttribute("students", students);
         model.addAttribute("fees", new Fees());

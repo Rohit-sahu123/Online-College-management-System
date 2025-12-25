@@ -46,6 +46,31 @@ body{
 <div class="card">
 <div class="d-flex justify-content-between align-items-center mb-3">
 <h3>Attendance</h3>
+<!-- ===== QR Attendance Section ===== -->
+<div class="text-center my-4">
+    <h5 class="mb-2">Scan this QR to mark your attendance</h5>
+
+    <div style="background:#fff;padding:12px;border-radius:12px;display:inline-block">
+        <img src= "${qrUrl}"
+             alt="Attendance QR"
+             style="width:220px;height:220px"/>
+    </div>
+
+    <p class="mt-2 small text-light">
+        QR code refreshes automatically
+    </p>
+</div>
+<!-- ===== QR Attendance Section END ===== -->
+<!-- ===== Student Details ===== -->
+<div class="mt-3 text-center">
+    <h6>Student Details</h6>
+    <p><b>Name:</b> ${student.name}</p>
+    <p><b>Roll No:</b> ${student.rollNo}</p>
+    <p><b>Course:</b> ${student.course}</p>
+</div>
+
+
+
 <a href="/student1/dashboard" class="btn btn-light btn-sm">Back</a>
 </div>
 
@@ -61,24 +86,45 @@ body{
 <tr><th>Date</th><th>Subject</th><th>Status</th></tr>
 </thead>
 <tbody>
-<c:forEach var="a" items="${attendanceList}">
-<tr>
-<td><c:out value="${a.date}"/></td>
-<td><c:out value="${a.subject}"/></td>
-<td>
-<c:choose>
-<c:when test="${a.status == 'Present'}">
-<span class="badge rounded-pill" style="background:#22c55e;color:#042">Present</span>
-</c:when>
-<c:otherwise>
-<span class="badge rounded-pill" style="background:#ff6b6b;color:#fff">Absent</span>
-</c:otherwise>
-</c:choose>
-</td>
-</tr>
-</c:forEach>
+
+<c:if test="${not empty attendanceList}">
+    <c:forEach var="a" items="${attendanceList}">
+        <tr>
+            <td>${a.date}</td>
+            <td>--</td>
+            <td>
+                <c:choose>
+                    <c:when test="${a.present}">
+                        <span class="badge bg-success">Present</span>
+                    </c:when>
+                    <c:otherwise>
+                        <span class="badge bg-danger">Absent</span>
+                    </c:otherwise>
+                </c:choose>
+            </td>
+        </tr>
+    </c:forEach>
+</c:if>
+
+<c:if test="${empty attendanceList}">
+    <tr>
+        <td colspan="3" class="text-center text-muted">
+            No attendance records found
+        </td>
+    </tr>
+</c:if>
+
 </tbody>
+
 </table>
 </div>
+<p>DEBUG STUDENT ID = ${student.id}</p>
+
+<script>
+    setTimeout(function () {
+        location.reload();
+    }, 50000); // 5 seconds
+</script>
+
 </body>
 </html>

@@ -60,4 +60,10 @@ public class AdminController {
         model.addAttribute("students", studentService.getAllStudents());
         return "admin/student-list";
     }
+
+    @GetMapping("/college-scanner")
+    public String scannerPage() {
+        return "collegeScanner";
+    }
+
 }

@@ -6,26 +6,27 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        body {
-            margin: 0;
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(120deg, #0f172a, #1e293b, #0a1124);
-            color: white;
-            overflow-x: hidden;
-        }
+       body {
+           margin: 0;
+           font-family: 'Poppins', sans-serif;
+           background: linear-gradient(120deg, #0f172a, #1e293b, #0a1124);
+           color: white;
+           overflow-x: hidden;
+           overflow-y: auto;   /* ✅ vertical scroll */
+       }
 
-        .sidebar {
-            width: 250px;
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(8px);
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            padding: 20px 0;
-            box-shadow: 2px 0 8px rgba(0,0,0,0.2);
-            transition: 0.3s;
-        }
+
+       .sidebar {
+           width: 250px;
+           background: transparent;   /* 🔥 background hata diya */
+           height: 100vh;
+           position: fixed;
+           top: 0;
+           left: 0;
+           padding: 20px 0;
+           overflow-y: auto;
+       }
+
 
         .sidebar h3 {
             text-align: center;
@@ -51,8 +52,15 @@
         .main {
             margin-left: 250px;
             padding: 20px;
-            animation: fadeIn 0.5s ease-in-out;
+            min-height: 100vh;
+            overflow-y: auto;
+
+                  margin-left: 250px;   /* sidebar ke baad start */
+                  padding: 20px;
+                  min-height: 100vh;
+              /* ✅ SCROLL */
         }
+
 
         .topbar {
             display: flex;
@@ -107,6 +115,7 @@
             width: 100%; height: 100%;
             z-index: -1;
         }
+
     </style>
 </head>
 <body>
@@ -115,6 +124,7 @@
 <!-- Sidebar -->
 <div class="sidebar">
     <h3><i class="bi bi-mortarboard"></i> Teacher Panel</h3>
+    <a href="/teacher/dashboard">Dashboard</a>
     <a href="#" class="active"><i class="bi bi-house"></i> Dashboard</a>
     <a href="/teacher/myclasses" class="list-group-item list-group-item-action">📘 My Classes & Timetable</a>
     <a href="/teacher/attendance"><i class="bi bi-clipboard-check"></i> Attendance Management</a>
@@ -130,37 +140,76 @@
     <a href="/teacher/leaves" class="list-group-item list-group-item-action">📅 Manage Leave</a>
     <a href="/teacher/students" class="btn btn-primary">View All Students</a>
     <a href="/teacher/students/add" class="btn btn-success">Add New Student</a>
+    <a href="/teacher/today-attendance"> 📅 Today Attendance </a>
+   <a href="/teacher/monthly-report?studentId=${studentId}&month=${month}&year=${year}">
+       📅 Monthly Attendance Report
+   </a>
+
+
 </div>
 
 <!-- Main content -->
-<div class="main">
-    <div class="topbar">
-        <h4>Welcome, Teacher 👩‍🏫</h4>
-        <a href="/logout"><button class="btn-logout">Logout</button></a>
-    </div>
 
-    <div class="row g-4">
-        <div class="col-md-4">
-            <div class="card p-3">
-                <h5 class="card-title"><i class="bi bi-clipboard-check"></i> Attendance</h5>
-                <p>Mark and view attendance for your classes.</p>
-            </div>
-        </div>
+  <div class="main">
 
-        <div class="col-md-4">
-            <div class="card p-3">
-                <h5 class="card-title"><i class="bi bi-pencil-square"></i> Assignments</h5>
-                <p>Post and review student assignments easily.</p>
-            </div>
-        </div>
+      <div class="topbar">
+          <h4>Welcome, Teacher 👩‍🏫</h4>
+          <a href="/logout"><button class="btn-logout">Logout</button></a>
+      </div>
 
-        <div class="col-md-4">
-            <div class="card p-3">
-                <h5 class="card-title"><i class="bi bi-megaphone"></i> Announcements</h5>
-                <p>Share important updates with students instantly.</p>
-            </div>
-        </div>
-    </div>
+      <h3>Teacher Dashboard</h3>
+
+      <!-- Cards -->
+      <div style="display:flex; gap:20px; margin-bottom:20px;">
+          <div style="padding:20px; background:#d4edda; border-radius:10px; min-width:150px;">
+              Present Today <br>
+              <b>${presentCount}</b>
+          </div>
+
+          <div style="padding:20px; background:#f8d7da; border-radius:10px; min-width:150px;">
+              Absent Today <br>
+              <b>${absentCount}</b>
+          </div>
+      </div>
+
+      <h4>Date : ${date}</h4>
+      <p>Total Students : ${totalStudents}</p>
+
+      <div class="row g-4">
+          <div class="col-md-4">
+              <div class="card p-3">
+                  <h5 class="card-title">Attendance</h5>
+                  <p>Mark and view attendance.</p>
+              </div>
+          </div>
+          <div class="col-md-4">
+              <div class="card p-3">
+                  <h5 class="card-title">Assignments</h5>
+                  <p>Post assignments.</p>
+              </div>
+          </div>
+          <div class="col-md-4">
+              <div class="card p-3">
+                  <h5 class="card-title">Announcements</h5>
+                  <p>Important notices.</p>
+              </div>
+          </div>
+          <p>Present Percentage : <b>${presentPercent}%</b></p>
+
+          <div style="width:300px; background:#e0e0e0; border-radius:10px;">
+              <div style="
+                  width:${presentPercent}%;
+                  background:#28a745;
+                  color:white;
+                  padding:5px;
+                  border-radius:10px;
+                  text-align:center;">
+                  ${presentPercent}%
+              </div>
+          </div>
+      </div>
+
+
 </div>
 <h3>Total Registered Students: ${totalStudents}</h3>
 <!-- Background animation -->

@@ -1,7 +1,8 @@
 package com.example.college.controller;
 
-import com.example.college.model.TeacherAttendanceEntity;
-import com.example.college.repository.TeacherAttendanceRepository;
+import com.example.college.model.*;
+import com.example.college.repository.*;
+import com.itextpdf.text.pdf.PdfPTable;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -11,50 +12,37 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import com.example.college.model.Timetable;
-import com.example.college.model.Exam;
 
 import java.io.IOException;
-import java.util.List;
+import java.time.LocalDate;
+import java.util.*;
 
 // iText PDF imports
 //import com.itextpdf.kernel.pdf.PdfDocument;
 //import com.itextpdf.kernel.pdf.PdfWriter;
 //import com.itextpdf.layout.Document;
 //import com.itextpdf.layout.element.Paragraph;
-import com.example.college.model.TeacherAssignmentEntity;
-import com.example.college.repository.TeacherAssignmentRepository;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import com.example.college.model.TeacherAnnouncementEntity;
-import com.example.college.repository.TeacherAnnouncementRepository;
-import com.example.college.model.TeacherMessageEntity;
-import com.example.college.repository.TeacherMessageRepository;
-import com.example.college.model.TeacherStudentEntity;
-import com.example.college.repository.TeacherStudentRepository;
-import com.example.college.model.TeacherLeaveEntity;
-import com.example.college.repository.TeacherLeaveRepository;
-import com.example.college.model.TeacherProfileEntity;
-import com.example.college.repository.TeacherProfileRepository;
 import org.springframework.web.multipart.MultipartFile;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.pdf.PdfWriter;
 import com.itextpdf.text.Paragraph;
 import com.example.college.service.StudentService1;
 import com.example.college.service.StudentService1;
-import com.example.college.model.Student1;
 import com.example.college.service.ResultService;
-import com.example.college.model.Result;
 
 import java.nio.file.*;
 
 @Controller
 @RequestMapping("/teacher")
 public class TeacherModuleController {
+    @Autowired
+    private AttendanceRepository attendanceRepository;
 
     @Autowired
     private TeacherAttendanceRepository teacherAttendanceRepository;
@@ -113,14 +101,14 @@ public class TeacherModuleController {
 
     // ✅ Filter by Date
     @GetMapping("/attendance/filter/date")
-    public String filterByDate(@RequestParam String date, Model model) {
-        if (date == null || date.trim().isEmpty()) {
+    public String filterByDate(@RequestParam String LocalDate, Model model) {
+        if (LocalDate == null || LocalDate.trim().isEmpty()) {
             model.addAttribute("error", "Please select a valid date!");
             return "teacher/attendance";
         }
 
-        model.addAttribute("attendanceList", teacherAttendanceRepository.findByDate(date));
-        model.addAttribute("filterApplied", "Date: " + date);
+        model.addAttribute("attendanceList", teacherAttendanceRepository.findByDate(java.time.LocalDate.parse(LocalDate)));
+        model.addAttribute("filterApplied", "Date: " + LocalDate);
         return "teacher/attendance";
     }
 
@@ -215,7 +203,7 @@ public class TeacherModuleController {
     }
 
     @Autowired
-    private com.example.college.repository.TeacherExamRepository teacherExamRepository;
+    private TeacherExamRepository teacherExamRepository;
 
     @GetMapping("/exam-entry")
     public String examEntryPage(Model model) {
@@ -228,7 +216,7 @@ public class TeacherModuleController {
                            @RequestParam String subject,
                            @RequestParam int marks,
                            @RequestParam String grade) {
-        com.example.college.model.TeacherExamEntity exam = new com.example.college.model.TeacherExamEntity();
+        TeacherExamEntity exam = new TeacherExamEntity();
         exam.setStudentName(studentName);
         exam.setSubject(subject);
         exam.setMarks(marks);
@@ -240,7 +228,7 @@ public class TeacherModuleController {
     // ✅ Edit Marks (load data in form)
     @GetMapping("/exam-entry/edit/{id}")
     public String editExam(@PathVariable Long id, Model model) {
-        com.example.college.model.TeacherExamEntity exam = teacherExamRepository.findById(id).orElse(null);
+        TeacherExamEntity exam = teacherExamRepository.findById(id).orElse(null);
         model.addAttribute("editExam", exam);
         model.addAttribute("examList", teacherExamRepository.findAll());
         return "teacher/exam-entry";
@@ -248,7 +236,7 @@ public class TeacherModuleController {
 
     // ✅ Update Marks (form submit)
     @PostMapping("/exam-entry/update")
-    public String updateExam(@ModelAttribute com.example.college.model.TeacherExamEntity updatedExam) {
+    public String updateExam(@ModelAttribute TeacherExamEntity updatedExam) {
         teacherExamRepository.save(updatedExam);
         return "redirect:/teacher/exam-entry";
     }
@@ -291,7 +279,7 @@ public class TeacherModuleController {
             TeacherAssignmentEntity assignment = new TeacherAssignmentEntity();
             assignment.setTitle(title);
             assignment.setDescription(description);
-            assignment.setDueDate(java.time.LocalDate.parse(dueDate));
+            assignment.setDueDate(LocalDate.parse(dueDate));
             assignment.setFileName(fileName);
 
             teacherAssignmentRepository.save(assignment);
@@ -533,14 +521,17 @@ public class TeacherModuleController {
     }
 
 
-    @GetMapping("/dashboard")
-    public String dashboard(Model model) {
+//    @GetMapping("/dashboard")
+//    public String dashboard(Model model) {
+//
+//        LocalDate today = LocalDate.now();
+//
+//        model.addAttribute("date", today);
+//        model.addAttribute("totalStudents", studentService.getAllStudents().size());
+//
+//        return "teacher-dashboard";   // JSP path
+//    }
 
-        int count = studentService.getAllStudents().size();
-        model.addAttribute("totalStudents", count);
-
-        return "teacher/teacher-dashboard";
-    }
 
     //private StudentService1 studentService;  @Autowired
     //  private StudentService1 studentService1;
@@ -584,5 +575,301 @@ public class TeacherModuleController {
         return "redirect:/teacher/students";
     }
 
+    @GetMapping("/today-attendance")
+    public String todayAttendance(Model model) {
+
+        LocalDate today = LocalDate.now();
+
+        // 🔹 Sirf PRESENT students
+        List<Attendance> presentList =
+                attendanceRepository.findByDateAndPresent(today, true);
+
+        // 🔹 Table ke liye data list
+        List<Map<String, Object>> tableList = new ArrayList<>();
+
+        for (Attendance a : presentList) {
+
+            Student1 st = studentService.getStudentById(a.getStudentId());
+            if (st == null) continue;
+
+            Map<String, Object> row = new HashMap<>();
+            row.put("studentId", st.getId());
+            row.put("studentName", st.getName());
+            row.put("subject", a.getSubject());
+            row.put("scanTime", a.getScanTime());
+            row.put("status", a.isPresent() ? "Present" : "Absent");
+
+            tableList.add(row);
+        }
+
+        model.addAttribute("todayList", tableList);
+        model.addAttribute("presentCount", tableList.size());
+        model.addAttribute("date", today);
+
+        return "teacher/today-attendance";
+    }
+
+
+//    @GetMapping("/dashboard")
+//    public String dashboard(Model model) {
+//
+//        Long teacherId = 1L;
+//        LocalDate today = LocalDate.now();
+//
+//        List<Attendance> list =
+//                attendanceRepository.findByTeacherIdAndDate(teacherId, today);
+//
+//        //  LinkedList<Object> list = new LinkedList<>();
+//        model.addAttribute("totalStudents", studentService.getAllStudents().size());
+//        LinkedList<Object> todayList = new LinkedList<>();
+//        model.addAttribute("presentCount", todayList.size());
+//        model.addAttribute("date", today);
+//
+//        return "teacher/dashboard";   // 👈 FIX 2
+//    }
+
+    @GetMapping("/dashboard")
+    public String dashboard(Model model) {
+
+        LocalDate today = LocalDate.now();
+
+        // 1️⃣ TOTAL STUDENTS (student table se)
+        long totalStudents = studentService.getTotalStudents();
+
+        // 2️⃣ PRESENT TODAY (attendance table se)
+        int presentCount =
+                attendanceRepository.findByDateAndPresent(today, true).size();
+
+        // 3️⃣ ABSENT = TOTAL - PRESENT
+        int absentCount = (int) totalStudents - presentCount;
+        double presentPercent = 0;
+        if (totalStudents > 0) {
+            presentPercent = (presentCount * 100.0) / totalStudents;
+        }
+
+        // 4️⃣ JSP ko bhejo
+        model.addAttribute("totalStudents", totalStudents);
+        model.addAttribute("presentCount", presentCount);
+        model.addAttribute("absentCount", absentCount);
+        model.addAttribute("date", today);
+        model.addAttribute("presentPercent", presentPercent);
+
+        // 🔎 DEBUG (console me check)
+        System.out.println(
+                "TOTAL=" + totalStudents +
+                        ", PRESENT=" + presentCount +
+                        ", ABSENT=" + absentCount
+        );
+
+        return "teacher/dashboard";
+    }
+
+    @GetMapping("/monthly-report")
+    public String monthlyReport(Model model) {
+
+        int month = LocalDate.now().getMonthValue();
+        int year = LocalDate.now().getYear();
+
+        LocalDate start = LocalDate.of(year, month, 1);
+        LocalDate end = start.withDayOfMonth(start.lengthOfMonth());
+
+        List<Student1> students = studentService.getAllStudents();
+
+        // 🔹 ek list banayenge table ke liye
+        List<Map<String, Object>> reportList = new ArrayList<>();
+
+        for (Student1 st : students) {
+
+            long presentDays =
+                    attendanceRepository
+                            .countByStudentIdAndDateBetweenAndPresent(
+                                    st.getId(), start, end, true);
+
+            long totalCollegeDays =
+                    attendanceRepository.countCollegeDays(start, end);
+
+            double percent = 0;
+            if (totalCollegeDays > 0) {
+                percent = (presentDays * 100.0) / totalCollegeDays;
+            }
+
+            Map<String, Object> row = new HashMap<>();
+            row.put("studentId", st.getId());
+            row.put("studentName", st.getName());
+            row.put("month", month + "/" + year);
+            row.put("totalAttendance", presentDays);
+            row.put("totalDays", totalCollegeDays);   // 🔥 NEW
+            row.put("percent", String.format("%.2f", percent));
+
+            reportList.add(row);
+        }
+
+
+        model.addAttribute("reportList", reportList);
+        model.addAttribute("month", month);
+        model.addAttribute("year", year);
+
+        return "teacher/monthly-report";
+    }
+
+
+//    @GetMapping("/monthly-report/pdf")
+//    public void downloadMonthlyReportPdf(
+//            @RequestParam Long studentId,
+//            @RequestParam int month,
+//            @RequestParam int year,
+//            HttpServletResponse response) throws Exception {
+//
+//        LocalDate start = LocalDate.of(year, month, 1);
+//        LocalDate end = start.withDayOfMonth(start.lengthOfMonth());
+//
+//        List<Attendance> list =
+//                attendanceRepository.findByStudentIdAndDateBetween(
+//                        studentId, start, end);
+//
+//        response.setContentType("application/pdf");
+//        response.setHeader("Content-Disposition",
+//                "attachment; filename=monthly-attendance.pdf");
+//
+//        Document document = new Document();
+//        PdfWriter.getInstance(document, response.getOutputStream());
+//        document.open();
+//
+//        document.add(new Paragraph("Monthly Attendance Report"));
+//        document.add(new Paragraph("Student ID: " + studentId));
+//        document.add(new Paragraph("Month: " + month + "/" + year));
+//        document.add(new Paragraph(" "));
+//
+//        PdfPTable table = new PdfPTable(2);
+//        table.addCell("Date");
+//        table.addCell("Status");
+//
+//        for (Attendance a : list) {
+//            table.addCell(a.getDate().toString());
+//            table.addCell(a.isPresent() ? "Present" : "Absent");
+//        }
+//
+//        document.add(table);
+//        document.close();
+//    }
+//
+//    @GetMapping("/monthly-report/all/pdf")
+//    public void downloadAllStudentsMonthlyPdf(
+//            @RequestParam int month,
+//            @RequestParam int year,
+//            HttpServletResponse response) throws Exception {
+//
+//        LocalDate start = LocalDate.of(year, month, 1);
+//        LocalDate end = start.withDayOfMonth(start.lengthOfMonth());
+//
+//        List<Student1> students = studentService.getAllStudents();
+//
+//        response.setContentType("application/pdf");
+//        response.setHeader("Content-Disposition",
+//                "attachment; filename=all-students-attendance.pdf");
+//
+//        Document document = new Document();
+//        PdfWriter.getInstance(document, response.getOutputStream());
+//        document.open();
+//
+//        document.add(new Paragraph(
+//                "All Students Monthly Attendance Report"));
+//        document.add(new Paragraph(
+//                "Month: " + month + "/" + year));
+//        document.add(new Paragraph(" "));
+//
+//        // 🔁 Har student ke liye section
+//        for (Student1 st : students) {
+//
+//            document.add(new Paragraph(
+//                    "Student: " + st.getName()
+//                            + " (ID: " + st.getId() + ")"));
+//            document.add(new Paragraph(" "));
+//
+//            List<Attendance> list =
+//                    attendanceRepository.findByStudentIdAndDateBetween(
+//                            st.getId(), start, end);
+//
+//            PdfPTable table = new PdfPTable(2);
+//            table.addCell("Date");
+//            table.addCell("Status");
+//
+//            for (Attendance a : list) {
+//                table.addCell(a.getDate().toString());
+//                table.addCell(a.isPresent() ? "Present" : "Absent");
+//            }
+//
+//            document.add(table);
+//            document.add(new Paragraph(" "));
+//            document.add(new Paragraph("-----------------------------------"));
+//            document.add(new Paragraph(" "));
+//        }
+//
+//        document.close();
+//    }
+
+    @GetMapping("/monthly-report/present-percent/pdf")
+    public void downloadPresentPercentPdf(
+            @RequestParam int month,
+            @RequestParam int year,
+            HttpServletResponse response) throws Exception {
+
+        LocalDate start = LocalDate.of(year, month, 1);
+        LocalDate end = start.withDayOfMonth(start.lengthOfMonth());
+
+        List<Student1> students = studentService.getAllStudents();
+
+        response.setContentType("application/pdf");
+        response.setHeader("Content-Disposition",
+                "attachment; filename=present-percent-report.pdf");
+
+        Document document = new Document();
+        PdfWriter.getInstance(document, response.getOutputStream());
+        document.open();
+
+        document.add(new Paragraph(
+                "Present Percentage Report (All Students)"));
+        document.add(new Paragraph(
+                "Month: " + month + "/" + year));
+        document.add(new Paragraph(" "));
+
+        // 🔥 TABLE with required columns
+        PdfPTable table = new PdfPTable(6);
+        table.setWidthPercentage(100);
+
+        table.addCell("Student ID");
+        table.addCell("Student Name");
+        table.addCell("Month");
+        table.addCell("Total Attendance");
+        table.addCell("Total Days");
+        table.addCell("Percent %");
+
+        for (Student1 st : students) {
+
+            long presentDays =
+                    attendanceRepository
+                            .countByStudentIdAndDateBetweenAndPresent(
+                                    st.getId(), start, end, true);
+
+            long totalCollegeDays =
+                    attendanceRepository.countCollegeDays(start, end);
+
+            double percent = 0;
+            if (totalCollegeDays > 0) {
+                percent = (presentDays * 100.0) / totalCollegeDays;
+            }
+
+            table.addCell(String.valueOf(st.getId()));
+            table.addCell(st.getName());
+            table.addCell(month + "/" + year);
+            table.addCell(String.valueOf(presentDays));
+            table.addCell(String.valueOf(totalCollegeDays)); // 🔥 NEW
+            table.addCell(String.format("%.2f", percent));
+        }
+
+
+        document.add(table);
+        document.close();
+    }
 
 }

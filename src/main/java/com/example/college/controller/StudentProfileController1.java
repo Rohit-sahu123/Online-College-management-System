@@ -19,13 +19,10 @@ public class StudentProfileController1 {
     @GetMapping("/profile")
     public String profile(Model model, HttpSession session) {
 
-        String email = (String) session.getAttribute("studentEmail");
+        Student1 st = (Student1) session.getAttribute("student1");
+        if (st == null) return "redirect:/student1/login";
 
-        if (email == null) {
-            return "redirect:/student1/login";
-        }
-
-        Student1 st = service.getByEmail(email);
+        //Student1 st = service.getByEmail(email);
 
         model.addAttribute("student", st);
 
@@ -37,13 +34,9 @@ public class StudentProfileController1 {
     @GetMapping("/profile/edit")
     public String editProfile(Model model, HttpSession session) {
 
-        String email = (String) session.getAttribute("studentEmail");
+        Student1 st = (Student1) session.getAttribute("student1");
 
-        if (email == null) {
-            return "redirect:/student1/login";
-        }
-
-        Student1 st = service.getByEmail(email);
+        // Student1 st = service.getByEmail(email);
 
         if (st == null) {
             return "redirect:/student1/login";

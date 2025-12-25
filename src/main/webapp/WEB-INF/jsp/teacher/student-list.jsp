@@ -15,21 +15,36 @@
 
 <h2>All Registered Students</h2>
 
-<table border="1" width="100%">
+<table border="1" cellpadding="8" cellspacing="0" width="100%">
     <tr>
+        <th>ID</th>
         <th>Name</th>
         <th>Email</th>
-        <th>Course</th>
+        <th>Action</th>
     </tr>
 
     <c:forEach var="s" items="${students}">
         <tr>
+            <td>${s.id}</td>
             <td>${s.name}</td>
             <td>${s.email}</td>
-            <td>${s.course}</td>
+
+            <td>
+                <a href="/student/delete/${s.id}"
+                   onclick="return confirm('Are you sure you want to delete this student?');"
+                   style="
+                     color:white;
+                     background:red;
+                     padding:5px 10px;
+                     text-decoration:none;
+                     border-radius:4px;">
+                   Delete
+                </a>
+            </td>
         </tr>
     </c:forEach>
 </table>
+
 <form action="/teacher/students/save" method="post">
     <input type="text" name="name" required>
     <input type="email" name="email" required>
